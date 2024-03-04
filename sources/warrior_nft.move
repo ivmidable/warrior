@@ -11,7 +11,6 @@ module warrior::warrior_nft {
     use nft_protocol::collection::{Self, Collection};
     use nft_protocol::display_info;
     use nft_protocol::mint_cap::{MintCap};
-    use nft_protocol::composable_nft::{Self as c_nft};
     use ob_permissions::witness;
 
     use ob_launchpad::warehouse::{Self, Warehouse};
@@ -19,22 +18,13 @@ module warrior::warrior_nft {
     //One time witness is only instantiated in the init method
     struct WARRIOR_NFT has drop {}
 
-    struct Warrior_nft has key, store {
-        id: UID,
-        piece: u8,
+    struct WarriorNft has key, store {
+        id: UID, //UID for Sui Global Store
+        round:u64, //which warrior round this belongs to.
+        type:u8, //Puzzle piece number
         name: String,
         url: Url,
     }
-
-    // struct Hair has key, store {
-    //     id: UID,
-    //     type: String,
-    // }
-
-    // struct Skin has key, store {
-    //     id: UID,
-    //     type: String
-    // }
 
     /// Can be used for authorization of other actions post-creation. It is
     /// vital that this struct is not freely given to any contract, because it
@@ -51,10 +41,10 @@ module warrior::warrior_nft {
         let collection_id = object::id(&collection);
 
         // Initialize per-type MintCaps
-        let mint_cap_overdrive: MintCap<Warrior_nft> =
-            mint_cap::new_limited(&otw, collection_id, 10_000, ctx);
+        let mint_cap_warrior: MintCap<WarriorNft> =
+            mint_cap::new_unlimited(&otw, collection_id, ctx);
 
-        // let mint_cap_hair: MintCap<Hair> =
+        // let mint_cap_piece: MintCap<Piece> =
         //     mint_cap::new_unlimited(&otw, collection_id, ctx);
 
         // let mint_cap_skin: MintCap<Skin> =
@@ -68,47 +58,33 @@ module warrior::warrior_nft {
             dw,
             &mut collection,
             display_info::new(
-                string::utf8(b"Warrior_nft"),
+                string::utf8(b"WarriorNft"),
                 string::utf8(b"A description"),
             ),
         );
 
-        // === Warrior_nft composability ===
-
-        let overdrive_blueprint = c_nft::new_composition<Warrior_nft>();
-        // c_nft::add_relationship<Warrior_nft, Hair>(
-        //     &mut overdrive_blueprint, 1,
-        // );
-        // c_nft::add_relationship<Warrior_nft, Skin>(
-        //     &mut overdrive_blueprint, 1,
-        // );
-
-        collection::add_domain(
-            dw, &mut collection, overdrive_blueprint,
-        );
-
-        transfer::public_transfer(mint_cap_warrior_nft, sender);
-        //transfer::public_transfer(mint_cap_hair, sender);
-        //transfer::public_transfer(mint_cap_skin, sender);
+        transfer::public_transfer(mint_cap_warrior, sender);
         transfer::public_transfer(publisher, sender);
         transfer::public_share_object(collection);
     }
 
     public entry fun mint_warrior_nft(
         name: String,
-        color: String,
-        mood: String,
+        round:u64,
+        type:u8,
         url: vector<u8>,
         // Need to be mut because supply is capped at 10_000 Warrior_nfts
-        mint_cap: &mut MintCap<Warrior_nft>,
+        mint_cap: &mut MintCap<WarriorNft>,
         //doesn't need to be warehouse - this is just the place NFTs 
         //get stored after creation for initial sale/mint
-        warehouse: &mut Warehouse<Warrior_nft>,
+        warehouse: &mut Warehouse<WarriorNft>,
         ctx: &mut TxContext,
     ) {
-        let nft = Warrior_nft {
+        let nft = WarriorNft {
             id: object::new(ctx),
             name,
+            round,
+            type,
             url: url::new_unsafe_from_bytes(url),
         };
 
@@ -122,51 +98,9 @@ module warrior::warrior_nft {
         warehouse::deposit_nft(warehouse, nft);
     }
 
-    public fun get_piece(warrior_nft: &Warrior_nft) : u8 {
-        warrior_nft.piece
+    public fun get_type(warrior_nft: &WarriorNft) : u8 {
+        warrior_nft.type
     }
-
-    // public entry fun mint_hair(
-    //     type: String,
-    //     // Does not need to be mut because supply is unregulated
-    //     mint_cap: &MintCap<Hair>,
-    //     warehouse: &mut Warehouse<Hair>,
-    //     ctx: &mut TxContext,
-    // ) {
-    //     let nft = Hair {
-    //         id: object::new(ctx),
-    //         type,
-    //     };
-
-    //     mint_event::emit_mint(
-    //         witness::from_witness(Witness {}),
-    //         mint_cap::collection_id(mint_cap),
-    //         &nft,
-    //     );
-
-    //     warehouse::deposit_nft(warehouse, nft);
-    // }
-
-    // public entry fun mint_skin(
-    //     type: String,
-    //     // Does not need to be mut because supply is unregulated
-    //     mint_cap: &MintCap<Skin>,
-    //     warehouse: &mut Warehouse<Skin>,
-    //     ctx: &mut TxContext,
-    // ) {
-    //     let nft = Skin {
-    //         id: object::new(ctx),
-    //         type,
-    //     };
-
-    //     mint_event::emit_mint(
-    //         witness::from_witness(Witness {}),
-    //         mint_cap::collection_id(mint_cap),
-    //         &nft,
-    //     );
-
-    //     warehouse::deposit_nft(warehouse, nft);
-    // }
 
     #[test_only]
     use sui::test_scenario::{Self, ctx};
