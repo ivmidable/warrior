@@ -1,19 +1,20 @@
 [package]
 name = "warrior"
+version = "0.0.1"
 
 [dependencies]
 MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "main", override=true }
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "main", override=true }
-NftProtocol = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/nft_protocol", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229", override=true }
-Launchpad = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/launchpad", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
-LiquidityLayerV1 = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/liquidity_layer_v1", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
-#Request = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/request", rev = "main" }
+#NftProtocol = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/nft_protocol", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229", override=true }
+#Launchpad = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/launchpad", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
+#LiquidityLayerV1 = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/liquidity_layer_v1", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
+Kiosk = { git = "https://github.com/MystenLabs/sui.git", subdir = "kiosk", rev = "main" }
 
 
 [addresses]
-warrior = "0x21e8"
+warrior = "0x0"
 std = "0x1"
 sui = "0x2"
-nft_protocol = "0xbc3df36be17f27ac98e3c839b2589db8475fa07b20657b08e8891e3aaf5ee5f9"
-liquidity_layer_v1 = "0x4e0629fa51a62b0c1d7c7b9fc89237ec5b6f630d7798ad3f06d820afb93a995a"
-launchpad = "0x546b50e2570a478ecdfc6e836077fc1f69306393738b0be2df459e658ed20915"
+#nft_protocol = "0xbc3df36be17f27ac98e3c839b2589db8475fa07b20657b08e8891e3aaf5ee5f9"
+#liquidity_layer_v1 = "0x4e0629fa51a62b0c1d7c7b9fc89237ec5b6f630d7798ad3f06d820afb93a995a"
+#launchpad = "0x546b50e2570a478ecdfc6e836077fc1f69306393738b0be2df459e658ed20915"

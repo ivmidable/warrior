@@ -4,114 +4,157 @@ module warrior::warrior_nft {
     use sui::transfer;
     use sui::url::{Self, Url};
     use sui::tx_context::{Self, TxContext};
-    use sui::object::{Self, UID};
+    use sui::object::{Self, UID, ID};
+    use sui::package;
+    use sui::transfer_policy;
+    use sui::clock::{Self, Clock};
 
-    use nft_protocol::mint_cap;
-    use nft_protocol::mint_event;
-    use nft_protocol::collection::{Self, Collection};
-    use nft_protocol::display_info;
-    use nft_protocol::mint_cap::{MintCap};
-    use ob_permissions::witness;
+    use std::vector;
 
-    use ob_launchpad::warehouse::{Self, Warehouse};
+    friend warrior::minting_kiosk;
 
     //One time witness is only instantiated in the init method
     struct WARRIOR_NFT has drop {}
 
-    struct WarriorNft has key, store {
-        id: UID, //UID for Sui Global Store
-        round:u64, //which warrior round this belongs to.
-        type:u8, //Puzzle piece number
-        name: String,
-        url: Url,
+    struct WarriorRound has key, store {
+        id: UID,
+        mint_cap:ID,
+        supply:u64,
+        base_price:u64,
+        puzzle_rounds: vector<PuzzleRound>,
+        started_at:u64,
+        ends_at:u64
     }
 
-    /// Can be used for authorization of other actions post-creation. It is
-    /// vital that this struct is not freely given to any contract, because it
-    /// serves as an auth token.
-    struct Witness has drop {}
+    struct MintCap has key, store {
+        id: UID,
+    }
+
+    //Wrapper transferpolicy for minting.
+    struct MintPolicy has key, store {
+        id:UID,
+       // policy: TransferPolicy<WarriorNft>,
+    }
+
+    struct PuzzleRound has store, copy, drop {
+        warrior_round:ID,
+        puzzle_round:u8,
+        name: String,
+        image_uri: String,
+        json_uri: String,
+    }
+
+    struct Puzzle has store, drop {
+        name: String,
+        image_uri: String,
+        json_uri: String
+    }
+
+    //One time witness is only instantiated in the init method
+    //struct WARRIOR_NFT has drop {}
+
+    struct WarriorNft has key, store {
+        id: UID, //UID for Sui Global Store
+        warrior_round:u64, //which warrior round this belongs to.
+        puzzle_round:u8, //Puzzle piece number
+        name: String,
+        image_uri: String,
+        json_uri: String
+    }
 
     #[lint_allow(share_owned, self_transfer)]
     fun init(otw: WARRIOR_NFT, ctx: &mut TxContext) {
         let sender = tx_context::sender(ctx);
 
-        // Create Collection
-        let dw = witness::from_witness(Witness {});
-        let collection: Collection<WARRIOR_NFT> = collection::create(dw, ctx);
-        let collection_id = object::id(&collection);
+        // let mint_cap = MintCap {
+        //     id: object::new(ctx)
+        // };
 
-        // Initialize per-type MintCaps
-        let mint_cap_warrior: MintCap<WarriorNft> =
-            mint_cap::new_unlimited(&otw, collection_id, ctx);
+        // // Init Publisher
+        // let publisher = package::claim(otw, ctx);
 
-        // let mint_cap_piece: MintCap<Piece> =
-        //     mint_cap::new_unlimited(&otw, collection_id, ctx);
+        //Create TransferPolicy for Warrior NFt
+        // let (tp_mint, tp_mint_cap) = transfer_policy::new<WarriorNft>(&publisher, ctx);
+        // let (tp_user, tp_user_cap) = transfer_policy::new<WarriorNft>(&publisher, ctx);
+        // let m_policy = MintPolicy {
+        //     id: object::new(ctx),
+        //     //policy: tp_user
+        // };
 
-        // let mint_cap_skin: MintCap<Skin> =
-        //     mint_cap::new_unlimited(&otw, collection_id, ctx);
-
-        // Init Publisher
-        let publisher = sui::package::claim(otw, ctx);
-
-        // Add name and description to Collection
-        collection::add_domain(
-            dw,
-            &mut collection,
-            display_info::new(
-                string::utf8(b"WarriorNft"),
-                string::utf8(b"A description"),
-            ),
-        );
-
-        transfer::public_transfer(mint_cap_warrior, sender);
-        transfer::public_transfer(publisher, sender);
-        transfer::public_share_object(collection);
+        //transfer::public_transfer(mint_cap, sender)
+        //transfer::public_transfer(publisher, sender);
+        //transfer::public_transfer(m_policy, sender);
+        //transfer::public_transfer(tp_user, sender);
+        //transfer::public_transfer(tp_user_cap, sender);
+        //transfer::public_transfer(tp_mint_cap, sender);
+        //transfer::public_share_object(collection);
     }
 
-    public entry fun mint_warrior_nft(
+    public(friend) fun new(ctx: &mut TxContext) : MintCap {
+        let mint_cap = MintCap {
+            id: object::new(ctx)
+        };
+        mint_cap
+    }
+
+    public(friend) fun new_warrior_round(m_cap:&MintCap, clock:&Clock,  ctx: &mut TxContext, base_price:u64, length:u64) : WarriorRound {
+        let warrior_round = WarriorRound {
+            id: object::new(ctx),
+            mint_cap: object::id(m_cap),
+            supply:0,
+            base_price,
+            puzzle_rounds: vector::empty(),
+            started_at: clock::timestamp_ms(clock),
+            ends_at: clock::timestamp_ms(clock) + length
+        };
+        warrior_round
+        
+    }
+
+    public fun add_puzzle_round(m_cap:&MintCap, warrior_round:&mut WarriorRound, name:String, image_uri:String, json_uri:String ) {
+        let len = (vector::length(&mut warrior_round.puzzle_rounds) as u8);
+        let id = object::id(warrior_round);
+        vector::push_back(&mut warrior_round.puzzle_rounds, PuzzleRound { 
+            warrior_round: id, 
+            puzzle_round: len,
+            name,
+            image_uri,
+            json_uri
+        })
+    }
+
+
+
+    public(friend) fun mint(
+        mint_cap: &MintCap,
         name: String,
-        round:u64,
-        type:u8,
-        url: vector<u8>,
+        warrior_round:u64,
+        puzzle_round:u8,
+        image_uri: String,
+        json_uri: String,
         // Need to be mut because supply is capped at 10_000 Warrior_nfts
-        mint_cap: &mut MintCap<WarriorNft>,
+        
         //doesn't need to be warehouse - this is just the place NFTs 
         //get stored after creation for initial sale/mint
-        warehouse: &mut Warehouse<WarriorNft>,
+        //warehouse: &mut Warehouse<WarriorNft>,
         ctx: &mut TxContext,
-    ) {
+    ) : WarriorNft {
         let nft = WarriorNft {
             id: object::new(ctx),
             name,
-            round,
-            type,
-            url: url::new_unsafe_from_bytes(url),
+            warrior_round,
+            puzzle_round,
+            image_uri,
+            json_uri
         };
 
-        mint_cap::increment_supply(mint_cap, 1);
-        mint_event::emit_mint(
-            witness::from_witness(Witness {}),
-            mint_cap::collection_id(mint_cap),
-            &nft,
-        );
+        //mint_cap::increment_supply(mint_cap, 1);
+        // mint_event::emit_mint(
+        //     witness::from_witness(Witness {}),
+        //     mint_cap::collection_id(mint_cap),
+        //     &nft,
+        // );
 
-        warehouse::deposit_nft(warehouse, nft);
-    }
-
-    public fun get_type(warrior_nft: &WarriorNft) : u8 {
-        warrior_nft.type
-    }
-
-    #[test_only]
-    use sui::test_scenario::{Self, ctx};
-    #[test_only]
-    const USER: address = @0xA1C04;
-
-    #[test]
-    fun it_inits_collection() {
-        let scenario = test_scenario::begin(USER);
-        init(WARRIOR_NFT {}, ctx(&mut scenario));
-
-        test_scenario::end(scenario);
+        nft
     }
 }
