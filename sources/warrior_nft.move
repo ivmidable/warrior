@@ -1,13 +1,14 @@
 module warrior::warrior_nft {
-    use std::string::{Self, String};
-
+    use std::string::String;
     use sui::transfer;
-    use sui::url::{Self, Url};
+    //use sui::url::{Self, Url};
     use sui::tx_context::{Self, TxContext};
     use sui::object::{Self, UID, ID};
+    use sui::borrow::{Self, Referent};
     use sui::package;
-    use sui::transfer_policy;
+    use sui::transfer_policy::{Self as tpol, TransferPolicy};
     use sui::clock::{Self, Clock};
+    use kiosk::{royalty_rule, floor_price_rule, kiosk_lock_rule, personal_kiosk_rule};
 
     use std::vector;
 
@@ -28,12 +29,7 @@ module warrior::warrior_nft {
 
     struct MintCap has key, store {
         id: UID,
-    }
-
-    //Wrapper transferpolicy for minting.
-    struct MintPolicy has key, store {
-        id:UID,
-       // policy: TransferPolicy<WarriorNft>,
+        tpol: Referent<TransferPolicy<WarriorNft>>
     }
 
     struct PuzzleRound has store, copy, drop {
@@ -42,12 +38,7 @@ module warrior::warrior_nft {
         name: String,
         image_uri: String,
         json_uri: String,
-    }
-
-    struct Puzzle has store, drop {
-        name: String,
-        image_uri: String,
-        json_uri: String
+        ends_at:u64,
     }
 
     //One time witness is only instantiated in the init method
@@ -66,35 +57,31 @@ module warrior::warrior_nft {
     fun init(otw: WARRIOR_NFT, ctx: &mut TxContext) {
         let sender = tx_context::sender(ctx);
 
-        // let mint_cap = MintCap {
-        //     id: object::new(ctx)
-        // };
-
         // // Init Publisher
-        // let publisher = package::claim(otw, ctx);
+        let publisher = package::claim(otw, ctx);
 
-        //Create TransferPolicy for Warrior NFt
-        // let (tp_mint, tp_mint_cap) = transfer_policy::new<WarriorNft>(&publisher, ctx);
-        // let (tp_user, tp_user_cap) = transfer_policy::new<WarriorNft>(&publisher, ctx);
-        // let m_policy = MintPolicy {
-        //     id: object::new(ctx),
-        //     //policy: tp_user
-        // };
+        //Transfer Policy creation and rules for the MintCap
+        let (tp_mint, tp_mint_cap) = tpol::new<WarriorNft>(&publisher, ctx);
+        royalty_rule::add(&mut tp_mint, &tp_mint_cap, 300, 0);
 
-        //transfer::public_transfer(mint_cap, sender)
-        //transfer::public_transfer(publisher, sender);
-        //transfer::public_transfer(m_policy, sender);
-        //transfer::public_transfer(tp_user, sender);
-        //transfer::public_transfer(tp_user_cap, sender);
-        //transfer::public_transfer(tp_mint_cap, sender);
-        //transfer::public_share_object(collection);
-    }
-
-    public(friend) fun new(ctx: &mut TxContext) : MintCap {
+        //Create mint cap and wrap transfer policy with a Referent.
         let mint_cap = MintCap {
-            id: object::new(ctx)
+            id: object::new(ctx),
+            tpol: borrow::new(tp_mint, ctx)
         };
-        mint_cap
+
+        //Transfer Policy creation and rules for the user kiosk.
+        let (tp_user, tp_user_cap) = tpol::new<WarriorNft>(&publisher, ctx);
+        royalty_rule::add(&mut tp_user, &tp_user_cap, 300, 0);
+        floor_price_rule::add(&mut tp_user, &tp_user_cap, 1000000000);
+        kiosk_lock_rule::add(&mut tp_user, &tp_user_cap);
+        personal_kiosk_rule::add(&mut tp_user, &tp_user_cap);
+
+        transfer::public_transfer(mint_cap, sender);
+        transfer::public_transfer(publisher, sender);
+        transfer::public_transfer(tp_user, sender);
+        transfer::public_transfer(tp_user_cap, sender);
+        transfer::public_transfer(tp_mint_cap, sender);
     }
 
     public(friend) fun new_warrior_round(m_cap:&MintCap, clock:&Clock,  ctx: &mut TxContext, base_price:u64, length:u64) : WarriorRound {
@@ -111,32 +98,28 @@ module warrior::warrior_nft {
         
     }
 
-    public fun add_puzzle_round(m_cap:&MintCap, warrior_round:&mut WarriorRound, name:String, image_uri:String, json_uri:String ) {
-        let len = (vector::length(&mut warrior_round.puzzle_rounds) as u8);
+    public fun add_puzzle_round(_:&MintCap, warrior_round:&mut WarriorRound, name:String, image_uri:String, json_uri:String, ends_at:u64 ) {
+        let len = (vector::length(&warrior_round.puzzle_rounds) as u8);
         let id = object::id(warrior_round);
         vector::push_back(&mut warrior_round.puzzle_rounds, PuzzleRound { 
             warrior_round: id, 
             puzzle_round: len,
             name,
             image_uri,
-            json_uri
+            json_uri,
+            ends_at
         })
     }
 
 
 
-    public(friend) fun mint(
-        mint_cap: &MintCap,
+    public(friend) fun create_nft(
+        _: &MintCap,
         name: String,
         warrior_round:u64,
         puzzle_round:u8,
         image_uri: String,
         json_uri: String,
-        // Need to be mut because supply is capped at 10_000 Warrior_nfts
-        
-        //doesn't need to be warehouse - this is just the place NFTs 
-        //get stored after creation for initial sale/mint
-        //warehouse: &mut Warehouse<WarriorNft>,
         ctx: &mut TxContext,
     ) : WarriorNft {
         let nft = WarriorNft {

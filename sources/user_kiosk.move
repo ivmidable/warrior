@@ -1,3 +1,4 @@
+#[allow(unused_use)]
 module warrior::user_kiosk {
     use kiosk::{personal_kiosk, royalty_rule};
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
@@ -17,14 +18,14 @@ module warrior::user_kiosk {
         table: Table<address, bool>,
     }
 
-    
+    #[allow(lint(share_owned))]
     fun init(otw: USER_KIOSK, ctx: &mut TxContext) {
         let publisher = package::claim(otw, ctx);
         let registry = create_registry(ctx);
         transfer::public_transfer(publisher, tx_context::sender(ctx));
         transfer::share_object(registry)
     }
-
+    #[allow(lint(share_owned))]
     fun create_registry(ctx: &mut TxContext) : Registry {
         Registry {
             id: object::new(ctx),
@@ -32,14 +33,15 @@ module warrior::user_kiosk {
         }
     }
 
-    public fun create_user_kiosk(registry:&mut Registry, ctx: &mut TxContext) {
+    public fun create_user_kiosk(registry:&mut Registry, ctx: &mut TxContext) : Kiosk {
         let (kiosk, kiosk_owner_cap) = kiosk::new(ctx);
         let pk_cap = personal_kiosk::new(&mut kiosk, kiosk_owner_cap, ctx);
         table::add(&mut registry.table, tx_context::sender(ctx), true);
         //transfer policy, tp_Cap, basis points, min amount
-        //royalty_rule::add(&mut policy, &pk_cap, 300, 0);
-        transfer::public_transfer(kiosk, tx_context::sender(ctx));
-        personal_kiosk::transfer_to_sender(pk_cap, ctx)
+       
+        //transfer::public_transfer(kiosk, tx_context::sender(ctx));
+        personal_kiosk::transfer_to_sender(pk_cap, ctx);
+        kiosk
     }
 
     //public fun 
