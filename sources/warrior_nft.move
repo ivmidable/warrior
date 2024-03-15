@@ -111,8 +111,6 @@ module warrior::warrior_nft {
         })
     }
 
-
-
     public(friend) fun create_nft(
         _: &MintCap,
         name: String,
