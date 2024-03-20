@@ -2,7 +2,7 @@
 
 [move]
 version = 0
-manifest_digest = "13B25863B1C54E61A9378C48D2F7508750F9BB1C675AC4108BF30A113972FB4A"
+manifest_digest = "CF5B0152C9C09673369050B20D10B9F668B2C7E350502BECC778B8624D4F08FC"
 deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
 
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
 
 [[move.package]]
 name = "Kiosk"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "main", subdir = "kiosk" }
+source = { git = "https://github.com/MystenLabs/apps.git", rev = "main", subdir = "kiosk" }
 
 dependencies = [
   { name = "Sui" },

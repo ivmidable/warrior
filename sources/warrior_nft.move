@@ -9,10 +9,11 @@ module warrior::warrior_nft {
     use sui::transfer_policy::{Self as tpol, TransferPolicy};
     use sui::clock::{Self, Clock};
     use kiosk::{royalty_rule, floor_price_rule, kiosk_lock_rule, personal_kiosk_rule};
-    use warrior::hodl_rule;
+    //use warrior::hodl_rule;
     use std::vector;
 
-    friend warrior::minting_kiosk;
+    // minting_kiosk doesn't yet exist in this package
+    //friend warrior::minting_kiosk;
 
     //One time witness is only instantiated in the init method
     struct WARRIOR_NFT has drop {}
@@ -142,7 +143,56 @@ module warrior::warrior_nft {
     }
 
     //transfer NFT
-    public fun transfer() {
+    public fun transfer(nft: WarriorNft, recipient: address) {
+        transfer::transfer(nft, recipient)
+    }
 
+    //burn NFT 
+    public fun destroy(nft: WarriorNft) {
+        let WarriorNft { id, name: _, warrior_round: _, puzzle_round: _, image_uri: _, json_uri: _ } = nft; 
+        object::delete(id); 
+    }
+
+    // Getters Warrior NFT 
+    public fun warrior_round(nft: &WarriorNft): &u64 {
+        &nft.warrior_round
+    }
+
+    public fun puzzle_round(nft: &WarriorNft): &u8 {
+        &nft.puzzle_round
+    }
+    
+    public fun name(nft: &WarriorNft): &String {
+        &nft.name
+    }
+
+    public fun image_uri(nft: &WarriorNft): &String {
+        &nft.image_uri
+    }
+
+    public fun json_uri(nft: &WarriorNft): &String {
+        &nft.json_uri
+    }
+
+    #[test_only]
+    // Wrapper of module initializer for testing
+    public fun init_for_test(ctx: &mut TxContext) {
+        init(WARRIOR_NFT {}, ctx); 
+    }
+
+    #[test_only]
+    use sui::test_scenario as ts; 
+    #[test_only]
+    use sui::address;
+
+    #[test]
+    fun init_test() : ts::Scenario {
+        let sender_address = address::from_u256(100); 
+        let scenario_val = ts::begin(sender_address); 
+        let scenario = &mut scenario_val; 
+        {
+            init_for_test(ts::ctx(scenario)); 
+        }; 
+        scenario_val
     }
 }

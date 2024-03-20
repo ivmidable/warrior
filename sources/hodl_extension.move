@@ -7,11 +7,10 @@
 
 module warrior::hodl {
     use sui::object::UID;
-    use sui::bag::{Self, Bag};
-    use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
+    use sui::bag::{Self};
+    use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::kiosk_extension;
-    use sui::tx_context::{Self, TxContext};
-    use std::string::String;
+    use sui::tx_context::{TxContext};
     use kiosk::personal_kiosk;
 
     /// Not a personal Kiosk
@@ -39,46 +38,53 @@ module warrior::hodl {
         kiosk_extension::add<HodlExtension>(ext, kiosk, cap, 3, ctx)
      }
 
-    public fun is_setup(kiosk: &Kiosk, ctx: &TxContext) {
-        if (kiosk_extension::is_installed<HodlExtension>(kiosk) && kiosk_extension::is_enabled<HodlExtension>(kiosk)) {
-            true
-        }
-        false
+    public fun is_setup(kiosk: &Kiosk, _ctx: &TxContext): bool {
+        kiosk_extension::is_installed<HodlExtension>(kiosk) && kiosk_extension::is_enabled<HodlExtension>(kiosk)
     }
 
     //k: "1:3", v: u64
     //"warrior_round:puzzle_piece"
     public fun get_hodl_count(
         kiosk: &Kiosk,
-        key: String
-    ) {
+        key: u64
+    ): u64 {
         let ext = HodlExtension {};
         let bag = kiosk_extension::storage<HodlExtension>(ext, kiosk);
-        bag::borrow(bag, key)
+        *bag::borrow<u64, u64>(bag, key)
     }
 
     public(friend) fun add_item(
         kiosk: &mut Kiosk,
-        key: String,
-     ) {
+        key: u64,
+    ) {
         let ext = HodlExtension {};
         let bag = kiosk_extension::storage_mut<HodlExtension>(ext, kiosk);
-        if (bag::contains(bag, key)) {
-            let v = bag::borrow_mut(bag, key);
-            v = v + 1;
+        let current_count = if (bag::contains(bag, key)) {
+            *bag::borrow_mut<u64, u64>(bag, key)
         } else {
-            bag::add(bag, key, 1u8);
-        }
-     }
+            0u64
+        };
+        let new_count = current_count + 1;
+        bag::add(bag, key, new_count);
+    }
 
     public(friend) fun remove_item(
         kiosk: &mut Kiosk,
-        key: String,
-     ) {
+        key: u64,
+    ) {
         let ext = HodlExtension {};
         let bag = kiosk_extension::storage_mut<HodlExtension>(ext, kiosk);
-        let v = bag::borrow_mut(bag, key);
-        assert!(v != 0, EItemNotInKiosk);
-        v = v - 1;
-     }
+
+        assert!(bag::contains(bag, key), EItemNotInKiosk);
+        let current_count = *bag::borrow_mut<u64, u64>(bag, key); 
+
+        assert!(current_count != 0, EItemNotInKiosk);
+
+        let new_count = current_count - 1;
+
+        let removed_value: u64 = bag::remove<u64, u64>(bag, key);
+        if (new_count > 0) {
+            bag::add(bag, key, new_count); 
+        }
+    }
 }

@@ -7,8 +7,14 @@ module warrior::hodl_rule {
         TransferPolicyCap,
         TransferRequest
     };
+
+    use sui::tx_context::{TxContext};
+
+    use sui::kiosk::{Kiosk};
+    //use std::string::String;
+
     use warrior::hodl;
-    use warrior::warrior_nft;
+    //use warrior::warrior_nft;
 
     /// Can't exceed the hodl limit.
     const EHodlLimitReached: u64 = 0;
@@ -37,15 +43,16 @@ module warrior::hodl_rule {
     public fun prove<T>(
         seller_kiosk: &mut Kiosk,
         buyer_kiosk: &mut Kiosk,
-        key:String,
+        key:u64,
         policy: &mut TransferPolicy<T>,
-        request: &mut TransferRequest<T>
+        request: &mut TransferRequest<T>, 
+        ctx: &mut TxContext,
     ) {
         let config: &Config = policy::get_rule(Rule {}, policy);
 
         //Assert that hodl extension is installed and enabled.
-        assert!(hodl::is_setup(seller_kiosk), EHodlInvalidSetup);
-        assert!(hodl::is_setup(buyer_kiosk), EHodlInvalidSetup);
+        assert!(hodl::is_setup(seller_kiosk, ctx), EHodlInvalidSetup);
+        assert!(hodl::is_setup(buyer_kiosk, ctx), EHodlInvalidSetup);
 
         //check to see if buyers hodl count is less than the config.
         assert!(hodl::get_hodl_count(buyer_kiosk, key) < config.hodl_count, EHodlLimitReached);
