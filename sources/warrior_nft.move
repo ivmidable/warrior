@@ -9,7 +9,7 @@ module warrior::warrior_nft {
     use sui::transfer_policy::{Self as tpol, TransferPolicy};
     use sui::clock::{Self, Clock};
     use kiosk::{royalty_rule, floor_price_rule, kiosk_lock_rule, personal_kiosk_rule};
-
+    use warrior::hodl_rule;
     use std::vector;
 
     friend warrior::minting_kiosk;
@@ -63,6 +63,7 @@ module warrior::warrior_nft {
         //Transfer Policy creation and rules for the MintCap
         let (tp_mint, tp_mint_cap) = tpol::new<WarriorNft>(&publisher, ctx);
         royalty_rule::add(&mut tp_mint, &tp_mint_cap, 300, 0);
+        //add 
 
         //Create mint cap and wrap transfer policy with a Referent.
         let mint_cap = MintCap {
@@ -76,6 +77,7 @@ module warrior::warrior_nft {
         floor_price_rule::add(&mut tp_user, &tp_user_cap, 1000000000);
         kiosk_lock_rule::add(&mut tp_user, &tp_user_cap);
         personal_kiosk_rule::add(&mut tp_user, &tp_user_cap);
+        //hodl
 
         transfer::public_transfer(mint_cap, sender);
         transfer::public_transfer(publisher, sender);
@@ -137,5 +139,10 @@ module warrior::warrior_nft {
         // );
 
         nft
+    }
+
+    //transfer NFT
+    public fun transfer() {
+
     }
 }

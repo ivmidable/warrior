@@ -7,22 +7,24 @@ module warrior::hodl_rule {
         TransferPolicyCap,
         TransferRequest
     };
+    use warrior::hodl;
+    use warrior::warrior_nft;
 
-    /// The price was lower than the floor price.
+    /// Can't exceed the hodl limit.
     const EHodlLimitReached: u64 = 0;
+    const EHodlInvalidSetup: u64 = 1;
 
     /// The "Rule" witness to authorize the policy.
     struct Rule has drop {}
 
-    /// Configuration for the `Floor Price Rule`.
-    /// It holds the minimum price that an item can be sold at.
-    /// There can't be any sales with a price < than the floor_price.
+    /// Configuration for the `Hodl Count Rule`.
+    /// It holds the maximum number of puzzles that a Kiosk can hold.
     struct Config has store, drop {
         hodl_count: u64
     }
 
-    /// Creator action: Add the Floor Price Rule for the `T`.
-    /// Pass in the `TransferPolicy`, `TransferPolicyCap` and `floor_price`.
+    /// Creator action: Add the Hodl Rule for the `T`.
+    /// Pass in the `TransferPolicy`, `TransferPolicyCap` and `hodl_count`.
     public fun add<T>(
         policy: &mut TransferPolicy<T>,
         cap: &TransferPolicyCap<T>,
@@ -31,20 +33,28 @@ module warrior::hodl_rule {
         policy::add_rule(Rule {}, policy, cap, Config { hodl_count })
     }
 
-    /// Buyer action: Prove that the amount is higher or equal to the floor_price.
+    /// Buyer action: Prove that the hodl count has not already been reached.
     public fun prove<T>(
+        seller_kiosk: &mut Kiosk,
+        buyer_kiosk: &mut Kiosk,
+        key:String,
         policy: &mut TransferPolicy<T>,
         request: &mut TransferRequest<T>
     ) {
         let config: &Config = policy::get_rule(Rule {}, policy);
 
-        // 1. Assert that hodl extension is installed and enabled.
+        //Assert that hodl extension is installed and enabled.
+        assert!(hodl::is_setup(seller_kiosk), EHodlInvalidSetup);
+        assert!(hodl::is_setup(buyer_kiosk), EHodlInvalidSetup);
 
-        // 2. Load hodl extension bad and check counter to see how many pieces are present.
-        // if the newly incremented amount is greater than allowance throw error.
+        //check to see if buyers hodl count is less than the config.
+        assert!(hodl::get_hodl_count(buyer_kiosk, key) < config.hodl_count, EHodlLimitReached);
 
-        //assert!(policy::paid(request) >= config.floor_price, EPriceTooSmall);
+        //update hodl counts for each kiosk.
+        hodl::add_item(buyer_kiosk, key);
+        hodl::remove_item(seller_kiosk, key);
 
+        //add receipt to policy.
         policy::add_receipt(Rule {}, request)
     }
 }
