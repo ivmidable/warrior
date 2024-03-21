@@ -15,6 +15,8 @@ module warrior::warrior_nft {
     // minting_kiosk doesn't yet exist in this package
     //friend warrior::minting_kiosk;
 
+    friend warrior::warrior_nft_tests; 
+
     //One time witness is only instantiated in the init method
     struct WARRIOR_NFT has drop {}
 
@@ -180,19 +182,4 @@ module warrior::warrior_nft {
         init(WARRIOR_NFT {}, ctx); 
     }
 
-    #[test_only]
-    use sui::test_scenario as ts; 
-    #[test_only]
-    use sui::address;
-
-    #[test]
-    fun init_test() : ts::Scenario {
-        let sender_address = address::from_u256(100); 
-        let scenario_val = ts::begin(sender_address); 
-        let scenario = &mut scenario_val; 
-        {
-            init_for_test(ts::ctx(scenario)); 
-        }; 
-        scenario_val
-    }
 }

@@ -46,7 +46,7 @@ module warrior::hodl {
     //"warrior_round:puzzle_piece"
     public fun get_hodl_count(
         kiosk: &Kiosk,
-        key: u64
+        key: u64,
     ): u64 {
         let ext = HodlExtension {};
         let bag = kiosk_extension::storage<HodlExtension>(ext, kiosk);

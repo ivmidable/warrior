@@ -3,8 +3,8 @@ name = "warrior"
 version = "0.0.1"
 
 [dependencies]
-MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "main", override=true }
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "main", override=true }
+MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet", override=true }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override=true }
 #NftProtocol = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/nft_protocol", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229", override=true }
 #Launchpad = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/launchpad", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
 #LiquidityLayerV1 = { git = "https://github.com/Origin-Byte/nft-protocol.git", subdir ="contracts/liquidity_layer_v1", rev = "6040797431ed63e77dd4501698b96fb6dcc0c229" }
