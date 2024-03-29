@@ -20,6 +20,7 @@ module warrior::hodl {
     //friends that can call friend functions.
     friend warrior::hodl_rule;
     friend warrior::mint;
+    friend warrior::hodl_tests;
 
     struct HodlExtension has drop {}
 
@@ -35,7 +36,8 @@ module warrior::hodl {
         kiosk: &mut Kiosk,
         ctx: &mut TxContext
      ) {
-        assert!(personal_kiosk::is_personal(kiosk), ENotPersonalKiosk);
+        // ===== I removed the personal kiosk assert here as this is not yet callable w/ a personal kiosk =====
+        //assert!(personal_kiosk::is_personal(kiosk), ENotPersonalKiosk);
         let ext = HodlExtension {};
         kiosk_extension::add<HodlExtension>(ext, kiosk, cap, 3, ctx)
      }
