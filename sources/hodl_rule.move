@@ -31,7 +31,7 @@ module warrior::hodl_rule {
 
     /// Creator action: Add the Hodl Rule for the `T`.
     /// Pass in the `TransferPolicy`, `TransferPolicyCap` and `hodl_count`.
-    public fun add<T>(
+    public fun add_policy<T>(
         policy: &mut TransferPolicy<T>,
         cap: &TransferPolicyCap<T>,
         hodl_count: u64

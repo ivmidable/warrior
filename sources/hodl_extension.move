@@ -21,6 +21,7 @@ module warrior::hodl {
     friend warrior::hodl_rule;
     friend warrior::mint;
     friend warrior::hodl_tests;
+    friend warrior::hodl_rule_tests; 
 
     struct HodlExtension has drop {}
 
