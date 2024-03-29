@@ -28,6 +28,8 @@ module warrior::hodl {
     }
     
     //add extension to personal kiosk
+    //!!! ===== THIS WILL ALWAYS FAIL - ADD Takes KioskOwnerCap and Not PersonalKioskOwnerCap =====
+    //!!! ===== NEED TO CALL ADD BEFORE TURNING KIOSK INTO PERSONAL KIOSK 
     public fun add(
         cap: &KioskOwnerCap,
         kiosk: &mut Kiosk,

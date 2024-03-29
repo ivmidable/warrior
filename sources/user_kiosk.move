@@ -45,8 +45,6 @@ module warrior::user_kiosk {
         kiosk
     }
 
-    //public fun 
-
     // Getters
     public fun has_kiosk(registry: &Registry, ctx: &TxContext) : bool {
         table::contains(&registry.table, tx_context::sender(ctx))
