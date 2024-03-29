@@ -44,9 +44,6 @@ module warrior::warrior_nft {
         ends_at:u64,
     }
 
-    //One time witness is only instantiated in the init method
-    //struct WARRIOR_NFT has drop {}
-
     struct WarriorNft has key, store {
         id: UID, //UID for Sui Global Store
         warrior_round:u64, //which warrior round this belongs to.

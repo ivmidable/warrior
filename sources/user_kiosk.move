@@ -25,6 +25,7 @@ module warrior::user_kiosk {
         transfer::public_transfer(publisher, tx_context::sender(ctx));
         transfer::share_object(registry)
     }
+    
     #[allow(lint(share_owned))]
     fun create_registry(ctx: &mut TxContext) : Registry {
         Registry {
@@ -49,5 +50,11 @@ module warrior::user_kiosk {
     // Getters
     public fun has_kiosk(registry: &Registry, ctx: &TxContext) : bool {
         table::contains(&registry.table, tx_context::sender(ctx))
+    }
+
+    #[test_only]
+    //Wrapper of module initializer for testing 
+    public fun init_for_test(ctx: &mut TxContext) {
+        init(USER_KIOSK {}, ctx); 
     }
 }
